@@ -25,7 +25,10 @@ class StratumConnection:
     def send(self, obj):
         with self.lock:
             if not self.closed.is_set():
-                self.sock.sendall(json.dumps(obj).encode() + b"\n")
+                payload = json.dumps(obj)
+                logging.info(f"[stratum->pool] id={obj.get('id')} method={obj.get('method')}")
+                logging.debug(f"[stratum->pool][json] {payload}")
+                self.sock.sendall(payload.encode() + b"\n")
 
     def close(self, reason):
         if not self.closed.is_set():
@@ -50,7 +53,11 @@ class StratumConnection:
                     while b"\n" in self.buf:
                         line, self.buf = self.buf.split(b"\n", 1)
                         if line:
-                            self.on_message(json.loads(line.decode()))
+                            decoded = line.decode()
+                            msg = json.loads(decoded)
+                            logging.info(f"[pool->stratum] id={msg.get('id')} method={msg.get('method')}")
+                            logging.debug(f"[pool->stratum][json] {decoded}")
+                            self.on_message(msg)
                 except socket.timeout:
                     break
         finally:
