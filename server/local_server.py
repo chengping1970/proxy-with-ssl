@@ -1,4 +1,4 @@
-import socket, threading, json
+import socket, threading, json, logging
 from server.miner_client import MinerClientHandler
 
 class LocalTaskServer(threading.Thread):
@@ -13,8 +13,10 @@ class LocalTaskServer(threading.Thread):
         self.miners = []
 
     def run(self):
+        logging.info(f"本地任务服务器开始接受连接: {self.addr[0]}:{self.addr[1]}")
         while True:
             c, a = self.sock.accept()
+            logging.info(f"接收到本地矿机连接: {a}")
             h = MinerClientHandler(c, a, self)
             self.clients.add(h)
             h.start()
@@ -23,11 +25,13 @@ class LocalTaskServer(threading.Thread):
         self.clients.discard(h)
 
     def push_task(self, task):
+        logging.info(f"向 {len(self.clients)} 个本地客户端推送任务")
         msg = json.dumps({"jsonrpc": "2.0", "id": 0, "result": task}).encode() + b"\n"
         for c in list(self.clients):
             c.sock.sendall(msg)
 
     def submit(self, msg, client):
+        logging.info("收到本地客户端提交，准备转发到活动矿池")
         params = msg["params"]
         rid = msg["id"]
 

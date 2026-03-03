@@ -16,9 +16,11 @@ class StratumConnection:
         self.lock = threading.Lock()
 
     def connect(self):
+        logging.info(f"[conn] connecting to {self.host}:{self.port}, ssl={self.use_ssl}")
         self.sock = self.create_socket(self.host, self.port, self.use_ssl)
         self.closed.clear()
         threading.Thread(target=self._recv_loop, daemon=True).start()
+        logging.info("[conn] recv loop started")
 
     def send(self, obj):
         with self.lock:
