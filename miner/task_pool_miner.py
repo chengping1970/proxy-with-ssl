@@ -1,8 +1,17 @@
-import threading, time, random, logging
+import threading
+import time
+import random
+import logging
+from typing import Any, Dict, List, Optional, Callable, TYPE_CHECKING
+
 from miner.states import MinerState
 from miner.reconnect import ReconnectPolicy
 from miner.submit_tracker import SubmitTracker
 from config.defaults import HASHRATE_HEARTBEAT_INTERVAL
+
+if TYPE_CHECKING:
+    from server.local_server import LocalTaskServer
+    from net.stratum_connection import StratumConnection
 
 
 class TaskPoolMiner(threading.Thread):
@@ -10,35 +19,50 @@ class TaskPoolMiner(threading.Thread):
 
     def __init__(
         self,
-        name,
-        host,
-        port,
-        use_ssl,
-        username,
-        worker,
-        send_task,
-        server,
-        create_socket,
-        StratumConnection,
-    ):
+        name: str,
+        host: str,
+        port: int,
+        use_ssl: bool,
+        username: str,
+        worker: str,
+        send_task: bool,
+        server: 'LocalTaskServer',
+        create_socket: Callable[[str, int, bool], Any],
+        StratumConnection: Any,  # Type annotation for class constructor
+    ) -> None:
+        """
+        Initialize a TaskPoolMiner instance
+        
+        Args:
+            name: Miner identifier
+            host: Pool hostname
+            port: Pool port
+            use_ssl: Whether to use SSL connection
+            username: Mining account username
+            worker: Worker name
+            send_task: Whether this miner should distribute tasks to clients
+            server: Reference to local task server
+            create_socket: Socket creation function
+            StratumConnection: Stratum connection class
+        """
         super().__init__(daemon=True)
-        self.name = name
-        self.username = username
-        self.worker = worker
-        self.send_task = send_task
-        self.server = server
-        self.state = MinerState.DISCONNECTED
-        self.force_stop = False
+        self.name: str = name
+        self.username: str = username
+        self.worker: str = worker
+        self.send_task: bool = send_task
+        self.server: 'LocalTaskServer' = server
+        self.state: MinerState = MinerState.DISCONNECTED
+        self.force_stop: bool = False
 
-        self.login_ack = threading.Event()
-        self.reconnect = ReconnectPolicy()
-        self.submit_tracker = SubmitTracker()
+        self.login_ack: threading.Event = threading.Event()
+        self.reconnect: ReconnectPolicy = ReconnectPolicy()
+        self.submit_tracker: SubmitTracker = SubmitTracker()
 
-        self.conn = StratumConnection(
+        self.conn: 'StratumConnection' = StratumConnection(
             host, port, use_ssl, create_socket, self.on_message, self.on_disconnect
         )
 
-    def run(self):
+    def run(self) -> None:
         """Main connection loop for the miner - connects, logs in, and maintains connection"""
         while not self.force_stop:
             try:
@@ -66,7 +90,7 @@ class TaskPoolMiner(threading.Thread):
                 logging.warning(f"[{self.name}] {e}")
 
             self.state = MinerState.DISCONNECTED
-            delay = self.reconnect.next_delay()
+            delay: float = self.reconnect.next_delay()
             logging.info(
                 f"[{self.name}] Current state DISCONNECTED, reconnecting in {delay:.2f}s"
             )
@@ -74,9 +98,9 @@ class TaskPoolMiner(threading.Thread):
 
     # ---------- protocol ----------
 
-    def send_login(self):
+    def send_login(self) -> None:
         """Send login request to the mining pool"""
-        tag = f"{self.username}.{self.worker}" if self.worker else self.username
+        tag: str = f"{self.username}.{self.worker}" if self.worker else self.username
         logging.info(f"[{self.name}] Login tag: {tag}")
         self.conn.send(
             {
@@ -87,18 +111,24 @@ class TaskPoolMiner(threading.Thread):
             }
         )
 
-    def submit_work(self, params, cb):
-        """Submit mining work result to the pool"""
+    def submit_work(self, params: List[Any], cb: Callable[[Any], None]) -> None:
+        """
+        Submit mining work result to the pool
+        
+        Args:
+            params: Work submission parameters
+            cb: Callback for result notification
+        """
         if self.state != MinerState.ACTIVE:
             return
-        sid = random.randint(10, 999999)
+        sid: int = random.randint(10, 999999)
         logging.info(f"[{self.name}] Forwarding submission task sid={sid}")
         self.submit_tracker.register(sid, cb)
         self.conn.send(
             {"jsonrpc": "2.0", "id": sid, "method": "eth_submitWork", "params": params}
         )
 
-    def _hashrate_heartbeat(self):
+    def _hashrate_heartbeat(self) -> None:
         """Send periodic hashrate heartbeat to the pool"""
         while self.state == MinerState.ACTIVE:
             try:
@@ -115,10 +145,15 @@ class TaskPoolMiner(threading.Thread):
                 pass
             time.sleep(HASHRATE_HEARTBEAT_INTERVAL)
 
-    def on_message(self, msg):
-        """Handle incoming messages from the mining pool"""
-        mid = msg.get("id")
-        result = msg.get("result")
+    def on_message(self, msg: Dict[str, Any]) -> None:
+        """
+        Handle incoming messages from the mining pool
+        
+        Args:
+            msg: JSON-RPC message from pool
+        """
+        mid: Optional[int] = msg.get("id")
+        result: Any = msg.get("result")
 
         if mid == 1:
             if result is True or isinstance(result, (list, dict)):
@@ -143,8 +178,13 @@ class TaskPoolMiner(threading.Thread):
             logging.info(f"[{self.name}] Received new task, pushing to local clients")
             self.server.push_task(result)
 
-    def on_disconnect(self, reason):
-        """Handle pool disconnection"""
+    def on_disconnect(self, reason: str) -> None:
+        """
+        Handle pool disconnection
+        
+        Args:
+            reason: Disconnection reason
+        """
         logging.warning(f"[{self.name}] disconnected: {reason}")
         self.state = MinerState.DISCONNECTED
         self.login_ack.clear()

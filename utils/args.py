@@ -1,8 +1,14 @@
 import argparse
+from typing import Any
 
 
-def parse_args():
-    """Parse command line arguments for the ETC Pool Proxy"""
+def parse_args() -> Any:
+    """
+    Parse command line arguments for the ETC Pool Proxy
+    
+    Returns:
+        Parsed arguments namespace
+    """
     p = argparse.ArgumentParser("ETC Pool Proxy")
 
     p.add_argument(
