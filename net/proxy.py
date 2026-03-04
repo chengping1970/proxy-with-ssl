@@ -2,7 +2,7 @@ import socket
 import ssl
 import socks  # type: ignore
 import logging
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple
 from urllib.parse import urlparse
 
 
@@ -12,7 +12,7 @@ PROXY: Optional[Tuple[str, str, int]] = None
 def setup_proxy(url: Optional[str]) -> None:
     """
     Configure upstream proxy settings for outbound connections
-    
+
     Args:
         url: Proxy URL in format scheme://host:port or None for direct connection
     """
@@ -30,12 +30,12 @@ def setup_proxy(url: Optional[str]) -> None:
 def create_socket(host: str, port: int, use_ssl: bool) -> socket.socket:
     """
     Create and configure a socket connection to a remote host
-    
+
     Args:
         host: Target hostname
         port: Target port
         use_ssl: Whether to wrap socket with SSL
-        
+
     Returns:
         Configured socket connection
     """
