@@ -46,7 +46,7 @@ def validate_pool(value: str) -> str:
         argparse.ArgumentTypeError: If pool address is invalid
     """
     # Support formats: host:port, scheme://host:port
-    pattern = r"^(?:(?:https?|ssl|socks[45])://)?[a-zA-Z0-9.-]+:\d+$"
+    pattern = r"^(?:([^:]+)://)?([a-zA-Z0-9.-]+):(\d+)$"
     if not re.match(pattern, value):
         raise argparse.ArgumentTypeError(
             f"Invalid pool format '{value}', expected [scheme://]host:port"
@@ -90,7 +90,13 @@ def parse_args() -> Any:
         help="Local bind address for clients (host:port)",
     )
     p.add_argument(
-        "-x", "--proxy", help="Upstream SOCKS proxy in format socks5://host:port"
+        "-x",
+        "--proxy",
+        help=(
+            "Upstream proxy URL.  SOCKS5/4 is supported (e.g. socks5://host:port), "
+            "and HTTP/HTTPS proxying via CONNECT is now implemented (e.g. "
+            "http://host:port)."
+        ),
     )
     p.add_argument(
         "-l",

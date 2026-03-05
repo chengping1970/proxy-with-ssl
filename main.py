@@ -30,8 +30,9 @@ def parse_pool(p: str) -> tuple[str, int, bool]:
     """
     if "://" in p:
         scheme, rest = p.split("://", 1)
+        scheme = scheme.lower()
         host, port_str = rest.split(":")
-        return host, int(port_str), scheme.endswith("ssl")
+        return host, int(port_str), "ssl" in scheme or "tls" in scheme or "tcps" in scheme or "https" in scheme
     host, port_str = p.split(":")
     return host, int(port_str), False
 
@@ -85,7 +86,7 @@ def main() -> None:
 
     args = parse_args()
     setup_logger(args.log_level)
-    logging.info(
+    logging.debug(
         "Startup arguments parsed, preparing to initialize proxy and local task service"
     )
     setup_proxy(args.proxy)
