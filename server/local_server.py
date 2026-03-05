@@ -29,7 +29,7 @@ class LocalTaskServer(threading.Thread):
 
     def run(self) -> None:
         """Accept incoming connections from local mining clients"""
-        logging.info(
+        logging.debug(
             f"Local task server starting to accept connections: {self.addr[0]}:{self.addr[1]}"
         )
         while not self._shutdown.is_set():

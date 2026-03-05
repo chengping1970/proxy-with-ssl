@@ -6,10 +6,10 @@ class MinerState(Enum):
 
     Attributes:
         DISCONNECTED: Connection is disconnected
-        LOGGING_IN: Authentication in progress
+        LOGIN_IN: Authentication in progress
         ACTIVE: Connection is active and ready
     """
 
     DISCONNECTED = "disconnected"
-    LOGGING_IN = "logging_in"
+    LOGIN_IN = "login_in"
     ACTIVE = "active"

@@ -86,9 +86,7 @@ def main() -> None:
 
     args = parse_args()
     setup_logger(args.log_level)
-    logging.debug(
-        "Startup arguments parsed, preparing to initialize proxy and local task service"
-    )
+    logging.debug("Startup arguments parsed, preparing to initialize proxy and local task service")
     setup_proxy(args.proxy)
 
     _server = LocalTaskServer(args.bind)

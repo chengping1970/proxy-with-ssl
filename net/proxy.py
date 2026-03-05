@@ -49,7 +49,7 @@ def create_socket(host: str, port: int, use_ssl: bool) -> socket.socket:
     sock: socket.socket
     # handle SOCKS proxies first (original behavior)
     if PROXY and PROXY[0].startswith("socks"):
-        logging.info(
+        logging.debug(
             f"Connecting through SOCKS proxy: {PROXY[1]}:{PROXY[2]} -> {host}:{port}"
         )
         s = socks.socksocket()
@@ -62,7 +62,7 @@ def create_socket(host: str, port: int, use_ssl: bool) -> socket.socket:
     # support HTTP/HTTPS CONNECT-style proxying
     elif PROXY and PROXY[0].startswith("http"):
         # open a plain socket to the proxy server
-        logging.info(
+        logging.debug(
             f"Connecting through HTTP proxy: {PROXY[1]}:{PROXY[2]} -> {host}:{port}"
         )
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,7 +71,7 @@ def create_socket(host: str, port: int, use_ssl: bool) -> socket.socket:
 
         # if the proxy itself is accessed over TLS, wrap now
         if PROXY[0] == "https":
-            logging.info(
+            logging.debug(
                 f"Enabling SSL for proxy connection: {PROXY[1]}:{PROXY[2]}"
             )
             ctx = ssl.create_default_context()
@@ -100,7 +100,7 @@ def create_socket(host: str, port: int, use_ssl: bool) -> socket.socket:
                 f"HTTP proxy CONNECT failed: {first_line.strip()}"
             )
     else:
-        logging.info(f"Directly connecting to target: {host}:{port}")
+        logging.debug(f"Directly connecting to target: {host}:{port}")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(30)
         sock.connect((host, port))

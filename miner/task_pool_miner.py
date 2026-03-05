@@ -78,7 +78,7 @@ class TaskPoolMiner(threading.Thread):
                     f"[{self.name}] Connecting to pool {self.conn.host}:{self.conn.port}, ssl={self.conn.use_ssl}"
                 )
                 self.conn.connect()
-                self.state = MinerState.LOGGING_IN
+                self.state = MinerState.LOGIN_IN
                 logging.info(f"[{self.name}] Connected, sending login request")
                 self.send_login()
 
